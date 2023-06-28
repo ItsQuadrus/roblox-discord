@@ -12,10 +12,11 @@ import logging
 import datetime
 from dotenv import load_dotenv
 import os
-from functions import log_command_usage, send_webhook
+from functions import send_webhook
 import sys
 import json
 import requests
+
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +28,12 @@ try:
 except KeyError:
     logging.warn("No webhook URL provided. Continuing without webhook.")
 
-ROBLOX_USER_ID = os.environ["ROBLOX_USER_ID"]
+
+# Roblox
+COOKIE = os.environ["COOKIE"]
+ROBLOX_USER_ID = int(os.environ["ROBLOX_USER_ID"])
+
+
 # Discord bot
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=".rd ", intents=intents)
@@ -114,11 +120,17 @@ or
 
 @bot.command()
 async def friends(ctx):
-    headers = {"Cookie": os.environ["ROBLOX_TOKEN"]}
+    headers = {
+        "Cookie": COOKIE,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    }
     r = requests.get(
         f"https://friends.roblox.com/v1/users/{ROBLOX_USER_ID}/friends/online",
         headers=headers,
     )
+
     if r.status_code == 200:
         data = r.json()
         if len(data["data"]) == 0:
@@ -130,15 +142,42 @@ async def friends(ctx):
                 color=0x00FF00,
             )
             for friend in data["data"]:
+                shebang = "#!"
+                PlaceID = friend["userPresence"]["placeId"]
+                GameURL = (
+                    f"https://www.roblox.com/games/{PlaceID}/{shebang}/game-instances"
+                )
+
+                if (
+                    friend["userPresence"]["lastLocation"] == "Website"
+                ):  # if friend is on the website, don't show the game URL as they are not in a game
+                    value = f"{friend['userPresence']['lastLocation']}"
+                else:
+                    value = f"{friend['userPresence']['lastLocation']} - Join them [here]({GameURL})"  # if friend is in a game, show the game URL
+
                 embed.add_field(
                     name=friend["displayName"],
-                    value=friend["userPresence"]["lastLocation"],
+                    value=value,
                     inline=False,
                 )
             await ctx.send(embed=embed)
     else:
-        await ctx.send(f"Error {r.status_code}")
-        logging.warning(f"Error {r.status_code}")
+        if r.status_code == 401:
+            await ctx.send(
+                "Error 401: Unauthorized. Make sure your cookie is still valid. <@410852168414003200>"
+            )
+        elif r.status_code == 429:
+            await ctx.send("Error 429: Rate limited. Please wait!")
+        else:
+            await ctx.send(f"Error {r.status_code}")
+            logging.warning(f"Error {r.status_code}: {r.text}")
+
+
+"""
+https://friends.roblox.com/v1/users/3798094563/friends/online
+Example response:
+{"data":[{"userPresence":{"UserPresenceType":"InGame","UserLocationType":"Game","lastLocation":"tntwarse's Place","placeId":2672596178,"rootPlaceId":2672596178,"gameInstanceId":"51571612-f260-4ecc-bd45-f89626e9cd90","universeId":961891971,"lastOnline":"2023-06-28T20:40:49.707Z"},"id":902354204,"name":"tntwarse","displayName":"tntwarse"}]}
+"""
 
 
 bot.run(os.environ["DISCORD_TOKEN"], log_handler=log_file_handler)
