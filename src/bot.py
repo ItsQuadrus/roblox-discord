@@ -174,9 +174,9 @@ async def friends(ctx):
 
 
 """
-https://friends.roblox.com/v1/users/3798094563/friends/online
+https://friends.roblox.com/v1/users/x/friends/online
 Example response:
-{"data":[{"userPresence":{"UserPresenceType":"InGame","UserLocationType":"Game","lastLocation":"tntwarse's Place","placeId":2672596178,"rootPlaceId":2672596178,"gameInstanceId":"51571612-f260-4ecc-bd45-f89626e9cd90","universeId":961891971,"lastOnline":"2023-06-28T20:40:49.707Z"},"id":902354204,"name":"tntwarse","displayName":"tntwarse"}]}
+{"data":[{"userPresence":{"UserPresenceType":"InGame","UserLocationType":"Game","lastLocation":"Place","placeId":x,"rootPlaceId":x,"gameInstanceId":"x-x-x-x-x","universeId":x,"lastOnline":"2023-x-x:40:49.707Z"},"id":x,"name":"x","displayName":"x"}]}
 """
 
 
