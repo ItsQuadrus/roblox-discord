@@ -1,14 +1,7 @@
 import logging
 import json
 import requests
-
-
-def log_command_usage(func):
-    async def wrapper(ctx, *args, **kwargs):
-        logging.info(f"{func.__name__} used by {ctx.author} in {ctx.guild}")
-        await func(ctx, *args, **kwargs)
-
-    return wrapper
+import time
 
 
 def send_webhook(guild, event_type, url):
