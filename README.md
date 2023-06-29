@@ -43,4 +43,4 @@ This project is licensed under the [Creative Commons Attribution 3.0 Unported Li
 
 You are free to use this code for any purpose, commercial or non-commercial. **Attribution is required: you must give credit to the original author.**
 
-You also need to **indicate if changes were made.** e.g. "Translation of BonkBot by ItsQuadrus"
+You also need to **indicate if changes were made.** e.g. "Translation of Roblox-Discord by ItsQuadrus"
