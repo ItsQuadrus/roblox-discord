@@ -90,94 +90,91 @@ async def ping(ctx):
     await ctx.send(f"Pong! {round(bot.latency * 1000)}ms")
 
 
-"""
-    Example response:
-    {
-  "data": [
-    {
-      "userPresence": {
-        "UserPresenceType": "Online",
-        "UserLocationType": "Page",
-        "lastLocation": "Website",
-        "placeId": null,
-        "rootPlaceId": null,
-        "gameInstanceId": null,
-        "universeId": null,
-        "lastOnline": "2023-06-28Tx:x:x.x"
-      },
-      "id": x,
-      "name": "abc",
-      "displayName": "abcdefg"
-    }
-  ]
-}
-
-or
-
-{"data":[{"userPresence":{"UserPresenceType":"InGame","UserLocationType":"Game","lastLocation":"Arsenal","placeId":286090429,"rootPlaceId":286090429,"gameInstanceId":"xxxxxx","universeId":xxxxx,"lastOnline":"2023-06-28Tx:x:x.xX"},"id":x,"name":"abc","displayName":"abcdefg"}]}
-"""
-
-
 @bot.command()
-async def friends(ctx):
+async def friends(ctx):  # friends command
+    logging.info("Friends command called...")
     headers = {
-        "Cookie": COOKIE,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Cookie": COOKIE,  # Raw cookie from roblox.com, contains .ROBLOSECURITY but is not limited to it.
+        "Content-Type": "application/json",
+        "Accept-Encoding": "gzip, deflate, br",  # Accept-Encoding header
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",  # User-Agent header
     }
-    r = requests.get(
+    r = requests.get(  # GET request to friends API, in order to get friends online, and to get their PlaceID and FriendID
         f"https://friends.roblox.com/v1/users/{ROBLOX_USER_ID}/friends/online",
         headers=headers,
     )
 
-    if r.status_code == 200:
-        data = r.json()
-        if len(data["data"]) == 0:
-            await ctx.send("No friends online.")
+    if r.status_code == 200:  # if HTTP 200 OK
+        data = r.json()  # extract JSON data from response
+        if len(data["data"]) == 0:  # if no friends are online
+            await ctx.send("No friends online.")  # send message
         else:
-            embed = discord.Embed(
+            embed = discord.Embed(  # create embed
                 title="Friends online",
                 description=f"Friends online for this [roblox user](https://www.roblox.com/users/{ROBLOX_USER_ID}/profile)",
-                color=0x00FF00,
+                color=0x00FF00,  # green color means online
             )
-            for friend in data["data"]:
-                shebang = "#!"
-                PlaceID = friend["userPresence"]["placeId"]
-                GameURL = (
-                    f"https://www.roblox.com/games/{PlaceID}/{shebang}/game-instances"
-                )
+            for friend in data["data"]:  # for each friend online
+                PlaceID = friend["userPresence"]["placeId"]  # PlaceID
+                FriendID = friend["id"]  # FriendID
 
-                if (
+                friend_ids = [
+                    friend["id"] for friend in data["data"]
+                ]  # list of friend IDs, this will help us to get presence
+
+                if (  # if friend is on the website, don't show the game URL as they are not in a game
                     friend["userPresence"]["lastLocation"] == "Website"
-                ):  # if friend is on the website, don't show the game URL as they are not in a game
+                ):
                     value = f"{friend['userPresence']['lastLocation']}"
                 else:
-                    value = f"{friend['userPresence']['lastLocation']} - Join them [here]({GameURL})"  # if friend is in a game, show the game URL
+                    presence_url = "https://presence.roblox.com/v1/presence/users"
+                    request_data = json.dumps(
+                        {"userIds": friend_ids}
+                    )  # convert to JSON
+                    logging.info(
+                        "JSON data for request to presence.roblox.com: " + request_data
+                    )
+                    request_presence = requests.post(
+                        url=presence_url, headers=headers, data=request_data
+                    )  # POST request to presence API, in order to get UniverseID
+                    presenceData = (
+                        request_presence.json()
+                    )  # extract JSON data from response
+                    logging.info("Presence data: " + str(presenceData))
+                    if request_presence.status_code == 200:
+                        rootPlaceId = presenceData["userPresences"][0][
+                            "rootPlaceId"
+                        ]  # extract rootPlaceId from response
+                        GameURL = f"{discord.utils.escape_markdown(f'https://www.roblox.com/games/start?placeId={PlaceID}&launchData=%7B%22roomId%22%3A%20{rootPlaceId}%7D')}"  # create game URL using PlaceID and UniverseID
+                        value = f"{friend['userPresence']['lastLocation']} - Join them [here]({GameURL})"  # value of embed, with GameURL
+                    else:
+                        value = f"{friend['userPresence']['lastLocation']} - ||Couldn't get UniverseID: {request_presence.status_code}||"
+                        logging.warning(
+                            "Couldn't get UniverseID: "
+                            + str(request_presence.status_code)
+                        )
 
-                embed.add_field(
+                embed.add_field(  # a field per friend
                     name=friend["displayName"],
                     value=value,
                     inline=False,
                 )
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed)  # send embed
+            logging.info("Friends command completed. Sent embed.")
     else:
         if r.status_code == 401:
             await ctx.send(
                 "Error 401: Unauthorized. Make sure your cookie is still valid. <@410852168414003200>"
             )
+            logging.warning(
+                "Error 401: Unauthorized. Make sure your cookie is still valid."
+            )
         elif r.status_code == 429:
             await ctx.send("Error 429: Rate limited. Please wait!")
+            logging.warning("Error 429: Rate limited. Please wait!")
         else:
             await ctx.send(f"Error {r.status_code}")
             logging.warning(f"Error {r.status_code}: {r.text}")
-
-
-"""
-https://friends.roblox.com/v1/users/3798094563/friends/online
-Example response:
-{"data":[{"userPresence":{"UserPresenceType":"InGame","UserLocationType":"Game","lastLocation":"tntwarse's Place","placeId":2672596178,"rootPlaceId":2672596178,"gameInstanceId":"51571612-f260-4ecc-bd45-f89626e9cd90","universeId":961891971,"lastOnline":"2023-06-28T20:40:49.707Z"},"id":902354204,"name":"tntwarse","displayName":"tntwarse"}]}
-"""
 
 
 bot.run(os.environ["DISCORD_TOKEN"], log_handler=log_file_handler)
