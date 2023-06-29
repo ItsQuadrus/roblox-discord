@@ -33,6 +33,8 @@ except KeyError:
 COOKIE = os.environ["COOKIE"]
 ROBLOX_USER_ID = int(os.environ["ROBLOX_USER_ID"])
 
+# Discord user ID
+DISCORD_USER_ID = int(os.environ["DISCORD_USER_ID"])
 
 # Discord bot
 intents = discord.Intents.all()
@@ -164,7 +166,7 @@ async def friends(ctx):  # friends command
     else:
         if r.status_code == 401:
             await ctx.send(
-                "Error 401: Unauthorized. Make sure your cookie is still valid. <@410852168414003200>"
+                f"Error 401: Unauthorized. Make sure your cookie is still valid. <@{DISCORD_USER_ID}>"
             )
             logging.warning(
                 "Error 401: Unauthorized. Make sure your cookie is still valid."
