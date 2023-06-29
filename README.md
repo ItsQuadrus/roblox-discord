@@ -29,7 +29,7 @@ Playing Friends (1):
 4. `pip install -r requirements.txt`
 5. `cp .env.example .env` or `copy .env.example .env`
 6. Fill in the `.env` file with your credentials.
-7. `python3 main.py`
+7. `python3 bot.py`
 8. Invite the bot to your server and run the commands
 9. Enjoy!
 
