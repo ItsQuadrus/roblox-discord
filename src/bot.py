@@ -33,6 +33,9 @@ except KeyError:
 COOKIE = os.environ["COOKIE"]
 ROBLOX_USER_ID = int(os.environ["ROBLOX_USER_ID"])
 
+# Misc
+utc_now = datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S UTC")
+
 # Discord user ID
 DISCORD_USER_ID = int(os.environ["DISCORD_USER_ID"])
 
@@ -177,6 +180,35 @@ async def friends(ctx):  # friends command
         else:
             await ctx.send(f"Error {r.status_code}")
             logging.warning(f"Error {r.status_code}: {r.text}")
+
+
+@bot.command()
+async def status(ctx):
+    logging.info("Status command called...")
+    headers = {
+        "Cookie": COOKIE,  # Raw cookie from roblox.com, contains .ROBLOSECURITY but is not limited to it.
+        "Content-Type": "application/json",
+    }
+    url = "http://hostedstatus.com/1.0/status/59db90dbcdeb2f04dadcf16d"
+    r = requests.get(url)
+    if r.status_code == 200:
+        parsed_data = json.loads(r.text)
+        overall_status = parsed_data["result"]["status_overall"]["status"]
+
+        embed = discord.Embed(title="Roblox Status", description=f"As of {utc_now}", color=0x00ff00)
+        embed.add_field(name="Overall Status", value=overall_status, inline=True)
+        for status in r.json()["result"]["status"]:
+            for container in status["containers"]:
+                embed.add_field(name=container["name"], value=container["status"], inline=True)
+        await ctx.send(embed=embed)
+    else:
+        logging.warning(f"API Error, error code {r.status_code}")
+        await ctx.send(f"API Error, error code {r.status_code}")
+    
+        
+    
+    
+    
 
 
 bot.run(os.environ["DISCORD_TOKEN"], log_handler=log_file_handler)
