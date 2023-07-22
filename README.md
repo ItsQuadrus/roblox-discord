@@ -6,7 +6,7 @@ This discord bot gets your friends' status using Roblox API and tells you who is
 
 - `.rd help` - Shows a list of commands
 - `.rd online` or `.rd playing` - Shows a list of your friends that are online or playing a game (outputs the same thing)
-- `.rd status` - Shows roblox Status
+- `.rd status` - Shows Roblox Global Status
 ### Example
 
 `.rd online`
