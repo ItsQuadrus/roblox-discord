@@ -1,6 +1,6 @@
 # Roblox Discord
 
-This discord bot looks up your friends on Roblox and tells you who is online. It also has a cool feature that allows you to see what games they are playing.
+This discord bot gets your friends' status using Roblox API and tells you who is online. It also has a cool feature that allows you to see what games they are playing.
 
 ## Commands
 
